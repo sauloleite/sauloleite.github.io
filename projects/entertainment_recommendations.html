@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entertainment Recommendations</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 90%;
+            margin: 50px auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .input-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .input-container input {
+            padding: 10px;
+            width: 50%;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            margin-right: 10px;
+        }
+        .input-container button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #3498db;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .input-container button:hover {
+            background-color: #2980b9;
+        }
+        .recommendation {
+            display: flex;
+            align-items: center;
+            margin-bottom: 60px; /* Ajuste da distância entre os títulos */
+        }
+        .recommendation img {
+            width: 100px;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 5px;
+            margin-right: 20px;
+        }
+        .recommendation h3 {
+            margin: 0;
+            color: #2c3e50;
+        }
+        .recommendation p {
+            margin: 5px 0 0;
+            color: #7f8c8d;
+        }
+        .recommendation-title {
+            font-weight: bold;
+            color: #e74c3c;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.0.0/crypto-js.min.js"></script>
+</head>
+<body>
+
+<div class="container">
+    <h1>Recommended Titles</h1>
+    <div class="input-container">
+        <input type="text" id="titleInput" placeholder="Enter a title...">
+        <button onclick="fetchRecommendations()">Submit</button>
+    </div>
+    <div id="recommendations"></div>
+</div>
+
+<script>
+    const passphrase = 'Sator Arepo Tenet Opera Rotas';
+    const encryptedUrl = 'U2FsdGVkX1/3GYhLOj0kHcgE5prhi+i5787sXzDa5MFS0SkOgwKu8gBXd6Ub/+UgytpYw3dtCdKeLK8XOgl9eyfKBOldr0ATpP9r9cXp5Wmu2stJGtq1Q1nosWFrv7dsWPAg1j/m0Iyu5JCVh8ryZ3VU329xRfnx7dE2IS/o0OQ=';
+    const encryptedApiKey = 'U2FsdGVkX19KuC8EcBBGOor9nfjBX8sfHC0WzSNGMlUeudbp86IhCQ/TjCYYsK1saS2oQBji2Y20sm5xPHUU5Q==';
+    const encryptedOmdbApiKey = 'U2FsdGVkX1+tz3vWsDOiFSyZw/9kdYob/XMVMI7bgaU=';
+
+    function decrypt(encryptedValue) {
+        return CryptoJS.AES.decrypt(encryptedValue, passphrase).toString(CryptoJS.enc.Utf8);
+    }
+
+    async function fetchRecommendations() {
+        const title = document.getElementById('titleInput').value;
+        if (!title) {
+            alert("Please enter a title!");
+            return;
+        }
+
+        const decryptedUrl = decrypt(encryptedUrl);
+        const decryptedApiKey = decrypt(encryptedApiKey);
+
+        const payload = {
+            messages: [{
+                role: "system",
+                content: `You are a specialist in recommending movies, TV shows, anime, and other entertainment content. You will receive a specific title, and based on the information from that title (such as genre, plot, characters, directors, actors, and popularity), your task is to recommend 10 other titles that would be relevant and interesting to someone who enjoyed the provided title.\\n\\nProvided Title: \\\"${title}\\\"\\n\\nPlease respond with a list of 10 recommended titles, along with a brief explanation of why each title was suggested.  The output must be: **Title**: description about title`
+            }],
+            temperature: 0.7,
+            top_p: 0.95,
+            max_tokens: 800
+        };
+
+        const response = await fetch(decryptedUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'api-key': decryptedApiKey
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+        const recommendationsText = data.choices[0].message.content;
+        displayRecommendations(recommendationsText);
+    }
+
+    async function fetchPoster(title) {
+        const decryptedOmdbApiKey = decrypt(encryptedOmdbApiKey);
+        const url = `https://www.omdbapi.com/?t=${encodeURIComponent(title)}&apikey=${decryptedOmdbApiKey}`;
+
+        console.log("Fetching poster for:", title);
+
+        try {
+            const response = await fetch(url);
+            const data = await response.json();
+            return data.Poster !== 'N/A' ? data.Poster : 'https://via.placeholder.com/100x150?text=No+Image'; // Caminho para a imagem padrão
+        } catch (error) {
+            console.error(`Error fetching poster for ${title}:`, error);
+            return 'https://via.placeholder.com/100x150?text=No+Image'; // Caminho para a imagem padrão em caso de erro
+        }
+    }
+
+    async function displayRecommendations(text) {
+        const recommendations = extractTitleAndDescription(text);
+        const recommendationsContainer = document.getElementById('recommendations');
+        recommendationsContainer.innerHTML = '';
+
+        for (const recommendation of recommendations) {
+            const posterUrl = await fetchPoster(recommendation.title);
+
+            const recommendationDiv = document.createElement('div');
+            recommendationDiv.classList.add('recommendation');
+
+            recommendationDiv.innerHTML = `
+                <img src="${posterUrl}" alt="${recommendation.title}">
+                <div>
+                    <h3 class="recommendation-title">${recommendation.title}</h3>
+                    <p>${recommendation.description}</p>
+                </div>
+            `;
+
+            recommendationsContainer.appendChild(recommendationDiv);
+        }
+    }
+
+    function extractTitleAndDescription(text) {
+        const regex = /\*\*(.*?)\*\*: (.*?)(?=\n|$)/g;
+        let match;
+        const recommendations = [];
+
+        while ((match = regex.exec(text)) !== null) {
+            let title = match[1].replace(/^\d+\.\s*/, ''); // Remove o número inicial e espaços extras
+            recommendations.push({ title: title.trim(), description: match[2] });
+        }
+
+        return recommendations;
+    }
+</script>
+
+</body>
+</html>
