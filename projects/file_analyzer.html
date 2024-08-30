@@ -62,6 +62,9 @@
             font-weight: bold;
             color: #2c3e50;
         }
+        .center-text {
+            text-align: center;
+        }
     </style>
     <!-- Incluindo a biblioteca CryptoJS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.0.0/crypto-js.min.js"></script>
@@ -80,6 +83,7 @@
 
 <div class="container">
     <h1>File Analyzer</h1>
+    <p class="center-text">Supports files: .docx,.pdf,.txt,.pptx,.png,.jpg,.jpeg</p>
     <div class="input-container">
         <input type="file" id="fileInput" accept=".docx,.pdf,.txt,.pptx,.png,.jpg,.jpeg">
         <button onclick="analyzeFile()">Analyze File</button>

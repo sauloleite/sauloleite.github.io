@@ -313,7 +313,8 @@
         const chatContainer = document.getElementById('chatContainer');
         const messageDiv = document.createElement('div');
         messageDiv.classList.add('chat-message', role);
-        messageDiv.textContent = content;
+        const formattedContent = content.replace(/\*\*/g, '');
+        messageDiv.innerHTML = formattedContent;
         chatContainer.appendChild(messageDiv);
         chatContainer.scrollTop = chatContainer.scrollHeight;
         document.getElementById('userInput').value = '';
