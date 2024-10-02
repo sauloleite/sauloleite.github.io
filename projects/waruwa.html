@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Waruwa AI Software Engineering ​​assistant</title>
+    <title>Waruwa AI Software Engineering Assistant</title>
     <link rel="icon" href="icons/icon.png" type="image/png">
     <style>
         body {
@@ -57,7 +57,7 @@
         }
 
         .input-container input {
-            width: 80%;
+            width: 70%;
             padding: 10px;
             font-size: 16px;
             border: 1px solid #ccc;
@@ -65,7 +65,7 @@
         }
 
         .input-container button {
-            width: 20%;
+            width: 15%;
             padding: 10px;
             font-size: 16px;
             background-color: #3498db;
@@ -77,6 +77,15 @@
 
         .input-container button:hover {
             background-color: #2980b9;
+        }
+
+        .input-container #addCodeButton {
+            width: 15%;
+            background-color: #2ecc71;
+        }
+
+        .input-container #addCodeButton:hover {
+            background-color: #27ae60;
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.0.0/crypto-js.min.js"></script>
@@ -91,6 +100,7 @@
         </div>
         <div class="input-container">
             <input type="text" id="userInput" placeholder="Type your question...">
+            <button id="addCodeButton" onclick="addCode()">Add a Code</button>
             <button onclick="sendMessage()">Send</button>
         </div>
     </div>
@@ -99,13 +109,14 @@
         const passphrase = 'Sator Arepo Tenet Opera Rotas';
         const encryptedUrl = 'U2FsdGVkX18o637ZK0GFkhullbElRzmj53u9389FaB9zKWzQolCUk4oGbPKXRNVJPA7X5JANMZA6GgdnbtHxLg==';
         const encryptedApiKey = 'U2FsdGVkX1+N/coksTcidOBRq8Dn6btGU1jlrqp5x+crlnNI5YpHVU1wTyWqWqzkf05wknxV3eAQZM64M106yA==';
-        function decrypt(encryptedValue) {
-            return CryptoJS.AES.decrypt(encryptedValue, passphrase).toString(CryptoJS.enc.Utf8);
-        }
-
         let threadId = '';
         let assistantId = '';
         let thinkingMessageDiv = null;
+        let codeContent = '';
+
+        function decrypt(encryptedValue) {
+            return CryptoJS.AES.decrypt(encryptedValue, passphrase).toString(CryptoJS.enc.Utf8);
+        }
 
         async function createAssistant() {
             try {
@@ -184,8 +195,13 @@
                 return;
             }
 
-            const userInput = document.getElementById('userInput').value;
+            let userInput = document.getElementById('userInput').value;
             if (!userInput) return;
+
+            if (codeContent) {
+                userInput += `\n\n${codeContent}`;
+                codeContent = ''; // Reset code content after sending
+            }
 
             appendMessage('user', userInput);
 
@@ -357,6 +373,24 @@
                 thinkingMessageDiv.remove();
                 thinkingMessageDiv = null;
             }
+        }
+
+        function addCode() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.py,.java,.js,.go,.c,.cpp,.cs,.txt';
+            input.onchange = async (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        codeContent = e.target.result;
+                        alert('Code added successfully!');
+                    };
+                    reader.readAsText(file);
+                }
+            };
+            input.click();
         }
 
         createAssistant();
