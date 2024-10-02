@@ -104,8 +104,8 @@
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    "instructions": "You are an expert in indigenous languages. Do not answer anything that is not related to indigenous languages.",
-                    "name": "Indigenous Language Assistant",
+                    "instructions": "Your name is 'Arandu' and you are an expert in indigenous languages. Do not answer anything that is not related to indigenous languages.",
+                    "name": "Arandu Indigenous Language Assistant",
                     "tools": [
                         {
                             "type": "file_search"
@@ -319,7 +319,9 @@
         const chatContainer = document.getElementById('chatContainer');
         const messageDiv = document.createElement('div');
         messageDiv.classList.add('chat-message', role);
-        const formattedContent = content.replace(/\*\*/g, '');
+        const formattedContent = content
+                .replace(/\n/g, '<br>') 
+                .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
         messageDiv.innerHTML = formattedContent;
         chatContainer.appendChild(messageDiv);
         chatContainer.scrollTop = chatContainer.scrollHeight;
