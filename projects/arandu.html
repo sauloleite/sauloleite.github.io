@@ -182,17 +182,37 @@
         }
     }
     
+    let codeContent = ''; // Define codeContent variable
+
     async function sendMessage() {
+        console.log('sendMessage called'); // Log para depuração
         if (!threadId) {
             console.error('Thread ID is undefined.');
             return;
         }
-
-        const userInput = document.getElementById('userInput').value;
+    
+        let userInput = document.getElementById('userInput').value;
         if (!userInput) return;
-
-        appendMessage('user', userInput);
-
+    
+        // Armazena o userInput original
+        const originalUserInput = userInput;
+    
+        if (codeContent) {
+            userInput += `\n\n${codeContent}`;
+        }
+    
+        // Limpa o campo de entrada aqui
+        document.getElementById('userInput').value = '';
+    
+        // Exibe apenas o userInput original no frontend
+        appendMessage('user', originalUserInput);
+    
+        // Adiciona a linha "Code sent" se houver código
+        if (codeContent) {
+            appendMessage('user', 'Code sent');
+            codeContent = ''; // Reset code content after sending
+        }
+    
         try {
             const response = await fetch(`${decrypt(encryptedUrl)}/openai/threads/${threadId}/messages?api-version=2024-05-01-preview`, {
                 method: 'POST',
@@ -205,10 +225,10 @@
                     "content": userInput
                 })
             });
-
+    
             const data = await response.json();
             console.log("Send Message Response: ", data);
-
+    
             if (response.ok) {
                 showThinkingMessage();
                 runThread();
@@ -219,7 +239,7 @@
             console.error(`Error sending message: ${error}`);
         }
     }
-
+    
     async function runThread() {
         if (!threadId || !assistantId) {
             console.error('Thread ID or Assistant ID is undefined.');
@@ -283,7 +303,7 @@
         }
     }
     
-    document.getElementById('userInput').addEventListener('keydown', function(event) {
+        document.getElementById('userInput').addEventListener('keydown', function (event) {
         if (event.key === 'Enter') {
             sendMessage();
         }
@@ -338,12 +358,10 @@
         const chatContainer = document.getElementById('chatContainer');
         const messageDiv = document.createElement('div');
         messageDiv.classList.add('chat-message', role);
-        console.log('marked function:', typeof marked); // Log para verificar se marked está definido
-        const formattedContent = marked.parse ? marked.parse(content) : marked(content); // Converte o conteúdo Markdown para HTML
+        const formattedContent = marked.parse ? marked.parse(content) : marked(content);
         messageDiv.innerHTML = formattedContent;
         chatContainer.appendChild(messageDiv);
         chatContainer.scrollTop = chatContainer.scrollHeight;
-        document.getElementById('userInput').value = '';
     }
 
     function showThinkingMessage() {
