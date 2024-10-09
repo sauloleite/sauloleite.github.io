@@ -74,6 +74,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js"></script>
     <!-- Incluindo a biblioteca JSZip -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+    <!-- Incluindo a biblioteca marked.js -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script>
         // Configurando o workerSrc para pdf.js
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.7.570/pdf.worker.min.js';
@@ -92,13 +94,13 @@
 </div>
 
 <script>
-    const passphrase = 'Sator Arepo Tenet Opera Rotas';
+    const pass = 'Sator Arepo Tenet Opera Rotas';
     const encryptedUrl = 'U2FsdGVkX1/3GYhLOj0kHcgE5prhi+i5787sXzDa5MFS0SkOgwKu8gBXd6Ub/+UgytpYw3dtCdKeLK8XOgl9eyfKBOldr0ATpP9r9cXp5Wmu2stJGtq1Q1nosWFrv7dsWPAg1j/m0Iyu5JCVh8ryZ3VU329xRfnx7dE2IS/o0OQ=';
-    const encryptedApiKey = 'U2FsdGVkX19KuC8EcBBGOor9nfjBX8sfHC0WzSNGMlUeudbp86IhCQ/TjCYYsK1saS2oQBji2Y20sm5xPHUU5Q==';
+    const encryptedApiKey = 'U2FsdGVkX1+0xVdSYcWB0rVCCaXwijaqIfRV+FpOQSl9S2ZM9rVZBBLRoWuuNn2Io8zzhcxk6eW86bAED36wAyS33u/swTSKIvgcEt8iOxrHAehbCIVCapbqva406IsDOVU9lIuT7ibU3kBuysqcQw==';
     const encryptedImgbbApiKey = 'U2FsdGVkX1/jTLip4Q0zOpwvNF5lNhtWwtmdnL/3Mm4h5Or1lolcFzI3CDeSze4RE6jI+se2fLrxx0kViigsbQ==';
 
     function decrypt(encryptedValue) {
-        return CryptoJS.AES.decrypt(encryptedValue, passphrase).toString(CryptoJS.enc.Utf8);
+        return CryptoJS.AES.decrypt(encryptedValue, pass).toString(CryptoJS.enc.Utf8);
     }
 
     async function analyzeFile() {
@@ -313,10 +315,11 @@
     function displayResult(text) {
         console.log('Displaying result');
         const resultContainer = document.getElementById('result');
+        const htmlContent = marked.parse ? marked.parse(text) : marked(text); // Converte o texto Markdown para HTML
         resultContainer.innerHTML = `
             <div class="result-content">
                 <h3 class="result-title">Analysis Result:</h3>
-                <p>${text}</p>
+                <div>${htmlContent}</div>
             </div>
         `;
     }
