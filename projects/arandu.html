@@ -2,61 +2,126 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Arandu Indigenous languages ​​assistant</title>
+    <title>Arandu Indigenous Language Assistant</title>
     <link rel="icon" href="icons/icon.png" type="image/png">
     <style>
+        /* General styles */
         body {
+            margin: 0;
             font-family: Arial, sans-serif;
             background-color: #f4f4f4;
-            margin: 0;
-            padding: 0;
         }
 
-        .container {
-            max-width: 800px;
-            margin: 50px auto;
+        .main-container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Sidebar (Chat history) */
+        .sidebar {
+            width: 25%;
+            background-color: #fff;
+            border-right: 1px solid #ddd;
+            overflow-y: auto;
+        }
+
+        .sidebar h2 {
+            padding: 20px;
+            margin: 0;
+            background-color: #3498db;
+            color: #fff;
+            text-align: center;
+        }
+
+        .sidebar .buttons {
+            display: flex;
+            justify-content: space-around;
+            padding: 10px;
+        }
+
+        .sidebar .buttons button {
+            padding: 10px;
+            font-size: 14px;
+            background-color: #3498db;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .sidebar .buttons button:hover {
+            background-color: #2980b9;
+        }
+
+        .chat-history {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .chat-history li {
+            padding: 15px;
+            border-bottom: 1px solid #ddd;
+            cursor: pointer;
+        }
+
+        .chat-history li:hover {
+            background-color: #f0f0f0;
+        }
+
+        .chat-history li.active {
+            background-color: #e0e0e0;
+            font-weight: bold;
+        }
+
+        /* Main chat window */
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-header {
             padding: 20px;
             background-color: #fff;
-            border-radius: 10px;
-            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-        }
-
-        h1 {
+            border-bottom: 1px solid #ddd;
             text-align: center;
-            color: #333;
         }
 
-        .chat-container {
-            border: 1px solid #ddd;
-            padding: 10px;
-            height: 60vh;
-            overflow-y: scroll;
-            margin-bottom: 20px;
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background-color: #fff;
         }
 
         .chat-message {
-            margin: 10px 0;
+            margin-bottom: 15px;
+            max-width: 70%;
             padding: 10px;
             border-radius: 5px;
+            word-wrap: break-word;
         }
 
         .chat-message.user {
+            margin-left: auto;
             background-color: #d5f5e3;
-            text-align: right;
         }
 
         .chat-message.assistant {
             background-color: #e8eaf6;
-            text-align: left;
         }
 
+        /* Text input area */
         .input-container {
             display: flex;
+            padding: 10px;
+            background-color: #fff;
+            border-top: 1px solid #ddd;
         }
 
         .input-container input {
-            width: 70%;
+            flex: 1;
             padding: 10px;
             font-size: 16px;
             border: 1px solid #ccc;
@@ -64,8 +129,8 @@
         }
 
         .input-container button {
-            width: 15%;
-            padding: 10px;
+            margin-left: 10px;
+            padding: 10px 20px;
             font-size: 16px;
             background-color: #3498db;
             color: #fff;
@@ -77,35 +142,44 @@
         .input-container button:hover {
             background-color: #2980b9;
         }
-
-        .input-container #addCodeButton {
-            width: 15%;
-            background-color: #2ecc71;
-        }
-
-        .input-container #addCodeButton:hover {
-            background-color: #27ae60;
-        }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.0.0/crypto-js.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body>
 
-<div class="container">
-    <h1>Arandu Indigenous Language Assistant</h1>
-    <div class="chat-container" id="chatContainer">
-        <!-- Chat messages will be appended here -->
+<div class="main-container">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <h2>Chat History</h2>
+        <div class="buttons">
+            <button onclick="createNewConversation()">New Conversation</button>
+            <button onclick="clearConversations()">Clear History</button>
+        </div>
+        <ul class="chat-history" id="chatHistory">
+            <!-- Chat history will be inserted here -->
+        </ul>
     </div>
-    <div class="input-container">
-        <input type="text" id="userInput" placeholder="Type your question...">
-        <button onclick="sendMessage()">Send</button>
+
+    <!-- Main chat window -->
+    <div class="chat-container">
+        <div class="chat-header">
+            <h1>Arandu Indigenous Language Assistant</h1>
+        </div>
+        <div class="chat-messages" id="chatContainer">
+            <!-- Chat messages will be inserted here -->
+        </div>
+        <div class="input-container">
+            <input type="text" id="userInput" placeholder="Type your question...">
+            <button onclick="sendMessage()">Send</button>
+        </div>
     </div>
 </div>
 
 <script>
     const encryptedUrl = 'U2FsdGVkX18JIQD0HF5sMYrCjG5orqnzfQFP0Nw2nJdKzhMzQVPhQAvb+ieYBMniw8SghQT4SoTdTf3Q7Y4R2w==';
     const encryptedApiKey = 'U2FsdGVkX1+0xVdSYcWB0rVCCaXwijaqIfRV+FpOQSl9S2ZM9rVZBBLRoWuuNn2Io8zzhcxk6eW86bAED36wAyS33u/swTSKIvgcEt8iOxrHAehbCIVCapbqva406IsDOVU9lIuT7ibU3kBuysqcQw==';
+
     function decrypt(encryptedValue) {
         return CryptoJS.AES.decrypt(encryptedValue, 'Sator Arepo Tenet Opera Rotas').toString(CryptoJS.enc.Utf8);
     }
@@ -113,6 +187,85 @@
     let threadId = '';
     let assistantId = '';
     let thinkingMessageDiv = null;
+
+    // Variables for history
+    let conversationId = '';
+    let conversations = [];
+
+    // Function to generate unique IDs
+    function generateId() {
+        return '_' + Math.random().toString(36).substr(2, 9);
+    }
+
+    // Load saved conversations from localStorage
+    function loadConversations() {
+        const savedConversations = localStorage.getItem('conversations');
+        if (savedConversations) {
+            conversations = JSON.parse(savedConversations);
+            updateConversationList();
+        }
+    }
+
+    // Update the conversation list in the UI
+    function updateConversationList() {
+        const chatHistory = document.getElementById('chatHistory');
+        chatHistory.innerHTML = '';
+
+        conversations.forEach(conv => {
+            const li = document.createElement('li');
+            li.textContent = conv.name;
+            li.dataset.id = conv.id;
+            li.addEventListener('click', () => {
+                loadConversation(conv.id);
+            });
+            if (conv.id === conversationId) {
+                li.classList.add('active');
+            }
+            chatHistory.appendChild(li);
+        });
+    }
+
+    // Save conversations to localStorage
+    function saveConversations() {
+        localStorage.setItem('conversations', JSON.stringify(conversations));
+    }
+
+    // Create a new conversation
+    function createNewConversation() {
+        const now = new Date();
+        const formattedDate = now.toLocaleString('en-US', { dateStyle: 'short', timeStyle: 'medium' });
+        conversationId = generateId();
+        conversations.push({
+            id: conversationId,
+            name: `Chat ${formattedDate}`,
+            messages: []
+        });
+        saveConversations();
+        updateConversationList();
+        document.getElementById('chatContainer').innerHTML = '';
+    }
+
+    // Clear conversation history
+    function clearConversations() {
+        conversations = [];
+        conversationId = '';
+        saveConversations();
+        updateConversationList();
+        document.getElementById('chatContainer').innerHTML = '';
+    }
+
+    // Load an existing conversation
+    function loadConversation(id) {
+        const conversation = conversations.find(conv => conv.id === id);
+        if (conversation) {
+            conversationId = id;
+            document.getElementById('chatContainer').innerHTML = '';
+            conversation.messages.forEach(msg => {
+                appendMessage(msg.role, msg.content, false);
+            });
+            updateConversationList();
+        }
+    }
 
     async function createAssistant() {
         try {
@@ -141,13 +294,11 @@
                     "temperature": 0
                 })
             });
-    
+
             const data = await response.json();
-            console.log("Create Assistant Response: ", data);
-    
+
             if (data.id) {
                 assistantId = data.id;
-                console.log(`Assistant ID: ${assistantId}`);
                 createThread();
             } else {
                 console.error(`Failed to create assistant: `, data);
@@ -156,7 +307,7 @@
             console.error(`Error creating assistant: ${error}`);
         }
     }
-    
+
     async function createThread() {
         try {
             const response = await fetch(`${decrypt(encryptedUrl)}/openai/threads?api-version=2024-05-01-preview`, {
@@ -167,13 +318,13 @@
                 },
                 body: ''
             });
-    
+
             const data = await response.json();
-            console.log("Create Thread Response: ", data);
-    
+
             if (data.id) {
                 threadId = data.id;
-                console.log(`Thread ID: ${threadId}`);
+                // Create new conversation when creating a new thread
+                createNewConversation();
             } else {
                 console.error(`Failed to create thread: `, data);
             }
@@ -181,38 +332,19 @@
             console.error(`Error creating thread: ${error}`);
         }
     }
-    
-    let codeContent = ''; // Define codeContent variable
 
     async function sendMessage() {
-        console.log('sendMessage called'); // Log para depuração
         if (!threadId) {
-            console.error('Thread ID is undefined.');
+            console.error('Thread ID is not set.');
             return;
         }
-    
-        let userInput = document.getElementById('userInput').value;
+
+        let userInput = document.getElementById('userInput').value.trim();
         if (!userInput) return;
-    
-        // Armazena o userInput original
-        const originalUserInput = userInput;
-    
-        if (codeContent) {
-            userInput += `\n\n${codeContent}`;
-        }
-    
-        // Limpa o campo de entrada aqui
+
         document.getElementById('userInput').value = '';
-    
-        // Exibe apenas o userInput original no frontend
-        appendMessage('user', originalUserInput);
-    
-        // Adiciona a linha "Code sent" se houver código
-        if (codeContent) {
-            appendMessage('user', 'Code sent');
-            codeContent = ''; // Reset code content after sending
-        }
-    
+        appendMessage('user', userInput);
+
         try {
             const response = await fetch(`${decrypt(encryptedUrl)}/openai/threads/${threadId}/messages?api-version=2024-05-01-preview`, {
                 method: 'POST',
@@ -225,27 +357,25 @@
                     "content": userInput
                 })
             });
-    
-            const data = await response.json();
-            console.log("Send Message Response: ", data);
-    
+
             if (response.ok) {
                 showThinkingMessage();
                 runThread();
             } else {
+                const data = await response.json();
                 console.error(`Failed to send message: `, data);
             }
         } catch (error) {
             console.error(`Error sending message: ${error}`);
         }
     }
-    
+
     async function runThread() {
         if (!threadId || !assistantId) {
-            console.error('Thread ID or Assistant ID is undefined.');
+            console.error('Thread ID or Assistant ID is not set.');
             return;
         }
-    
+
         try {
             const response = await fetch(`${decrypt(encryptedUrl)}/openai/threads/${threadId}/runs?api-version=2024-05-01-preview`, {
                 method: 'POST',
@@ -253,18 +383,15 @@
                     'api-key': decrypt(encryptedApiKey),
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ 
-                    "assistant_id": assistantId 
+                body: JSON.stringify({
+                    "assistant_id": assistantId
                 })
             });
-    
+
             const data = await response.json();
-            console.log("Run Thread Response: ", data);
-    
+
             if (response.ok && data.id) {
                 const runId = data.id;
-                console.log(`Run ID: ${runId}`);
-
                 checkRunStatus(runId);
             } else {
                 console.error(`Failed to run thread: `, data);
@@ -273,7 +400,7 @@
             console.error(`Error running thread: ${error}`);
         }
     }
-    
+
     async function checkRunStatus(runId) {
         try {
             const response = await fetch(`${decrypt(encryptedUrl)}/openai/threads/${threadId}/runs/${runId}?api-version=2024-05-01-preview`, {
@@ -283,31 +410,23 @@
                     'Content-Type': 'application/json'
                 }
             });
-    
+
             const data = await response.json();
-            console.log("Check Run Status Response: ", data);
-    
+
             if (response.ok && data.status === 'completed') {
                 removeThinkingMessage();
                 getAssistantResponse();
             } else if (data.status === 'queued' || data.status === 'in_progress') {
-                console.log(`Status is ${data.status}, checking again in 1 second...`);
                 setTimeout(() => checkRunStatus(runId), 1000);
             } else {
                 removeThinkingMessage();
-                console.error(`Error checking run status: `, data);
+                console.error(`Error checking status: `, data);
             }
         } catch (error) {
             removeThinkingMessage();
-            console.error(`Error checking run status: ${error}`);
+            console.error(`Error checking status: ${error}`);
         }
     }
-    
-        document.getElementById('userInput').addEventListener('keydown', function (event) {
-        if (event.key === 'Enter') {
-            sendMessage();
-        }
-    });
 
     async function getAssistantResponse() {
         try {
@@ -318,30 +437,36 @@
                     'Content-Type': 'application/json'
                 }
             });
-    
+
             const data = await response.json();
-            console.log("Get Assistant Response: ", data);
-    
+
             if (response.ok && Array.isArray(data.data)) {
-                const assistantMessage = data.data.find(message => message.role === 'assistant');
-                if (assistantMessage) {
-                    let messageContent = assistantMessage.content;
-    
-                    // Verifica se o conteúdo é um array de objetos e processa apropriadamente
+                // Messages may be in reverse chronological order
+                const assistantMessages = data.data.filter(message => message.role === 'assistant');
+
+                // Get the first assistant message (most recent)
+                const latestMessage = assistantMessages[0];
+
+                if (latestMessage) {
+                    let messageContent = latestMessage.content;
+
                     if (Array.isArray(messageContent)) {
                         messageContent = messageContent.map(item => {
                             if (item.type === 'text' && item.text && item.text.value) {
                                 return item.text.value;
                             }
-                            return null;
-                        }).filter(item => item !== null).join("\n"); // Junta todas as partes relevantes em uma string
-                    } else if (typeof messageContent === 'object') {
-                        messageContent = JSON.stringify(messageContent, null, 2);
+                            return '';
+                        }).join('\n');
+                    } else if (typeof messageContent === 'string') {
+                        messageContent = messageContent.replace(/【[\d:†source]+】/g, '');
+                    } else if (typeof messageContent === 'object' && messageContent.text && messageContent.text.value) {
+                        messageContent = messageContent.text.value;
+                    } else {
+                        console.error('Unsupported assistant message content format:', messageContent);
+                        return;
                     }
-    
-                    // Remover referências de fonte como  
-                    messageContent = messageContent.replace(/【[\d:†source]+】/g, '');
-    
+
+                    // Display the formatted message
                     appendMessage('assistant', messageContent);
                 } else {
                     console.error('No assistant message found.');
@@ -353,15 +478,27 @@
             console.error(`Error getting assistant response: ${error}`);
         }
     }
-              
-    function appendMessage(role, content) {
+    
+    function appendMessage(role, content, saveMessage = true) {
         const chatContainer = document.getElementById('chatContainer');
         const messageDiv = document.createElement('div');
         messageDiv.classList.add('chat-message', role);
-        const formattedContent = marked.parse ? marked.parse(content) : marked(content);
+
+        // Use Marked to render content as HTML, allowing Markdown formatting
+        const formattedContent = marked.parse(content);
         messageDiv.innerHTML = formattedContent;
+
         chatContainer.appendChild(messageDiv);
         chatContainer.scrollTop = chatContainer.scrollHeight;
+
+        // Save the message in the current conversation
+        if (saveMessage && conversationId) {
+            const conversation = conversations.find(conv => conv.id === conversationId);
+            if (conversation) {
+                conversation.messages.push({ role, content });
+                saveConversations();
+            }
+        }
     }
 
     function showThinkingMessage() {
@@ -380,6 +517,14 @@
         }
     }
 
+    document.getElementById('userInput').addEventListener('keydown', function (event) {
+        if (event.key === 'Enter') {
+            sendMessage();
+        }
+    });
+
+    // Initialization
+    loadConversations();
     createAssistant();
 </script>
 
