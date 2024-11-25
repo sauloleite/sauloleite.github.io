@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Guyra Assistant</title>
+    <link rel="icon" href="icons/icon.png" type="image/png">
+    <style>
+        /* General styles */
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            height: 100vh;
+            overflow: hidden; /* Evita rolagem na página principal */
+        }
+
+        .main-container {
+            display: flex;
+            height: 100%;
+            width: 100%;
+        }
+
+        /* Sidebar (Chat history) */
+        .sidebar {
+            width: 25%;
+            background-color: #fff;
+            border-right: 1px solid #ddd;
+            overflow-y: auto;
+        }
+
+        .sidebar h2 {
+            padding: 20px;
+            margin: 0;
+            background-color: #3498db;
+            color: #fff;
+            text-align: center;
+        }
+
+        .sidebar .buttons {
+            display: flex;
+            justify-content: space-around;
+            padding: 10px;
+        }
+
+        .sidebar .buttons button {
+            padding: 10px;
+            font-size: 14px;
+            background-color: #3498db;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .sidebar .buttons button:hover {
+            background-color: #2980b9;
+        }
+
+        .chat-history {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .chat-history li {
+            padding: 15px;
+            border-bottom: 1px solid #ddd;
+            cursor: pointer;
+        }
+
+        .chat-history li:hover {
+            background-color: #f0f0f0;
+        }
+
+        .chat-history li.active {
+            background-color: #e0e0e0;
+            font-weight: bold;
+        }
+
+        /* Main chat window */
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* Evita rolagem no contêiner principal */
+        }
+
+        .chat-header {
+            padding: 20px;
+            background-color: #fff;
+            border-bottom: 1px solid #ddd;
+            text-align: center;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow: auto; /* Permite rolagem vertical e horizontal */
+            background-color: #fff;
+        }
+
+        .chat-message {
+            margin-bottom: 15px;
+            max-width: 70%;
+            padding: 10px;
+            border-radius: 5px;
+            word-wrap: break-word;
+            overflow: auto; /* Permite rolagem horizontal nas mensagens */
+        }
+
+        .chat-message.user {
+            margin-left: auto;
+            background-color: #d5f5e3;
+        }
+
+        .chat-message.assistant {
+            background-color: #e8eaf6;
+        }
+
+        /* Text input area */
+        .input-container {
+            display: flex;
+            padding: 10px;
+            background-color: #fff;
+            border-top: 1px solid #ddd;
+        }
+
+        .input-container input {
+            flex: 1;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .input-container button {
+            margin-left: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #3498db;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .input-container button:hover {
+            background-color: #2980b9;
+        }
+
+        .input-container #addCodeButton {
+            width: 15%;
+            background-color: #2ecc71;
+        }
+
+        .input-container #addCodeButton:hover {
+            background-color: #27ae60;
+        }
+
+        .input-container select {
+            margin-left: 10px;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.0.0/crypto-js.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+
+<div class="main-container">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <h2>Chat History</h2>
+        <div class="buttons">
+            <button onclick="createNewConversation()">New Conversation</button>
+            <button onclick="clearConversations()">Clear History</button>
+        </div>
+        <ul class="chat-history" id="chatHistory">
+            <!-- Chat history will be inserted here -->
+        </ul>
+    </div>
+
+    <!-- Main chat window -->
+    <div class="chat-container">
+        <div class="chat-header">
+            <h1>Guyra Assistant</h1>
+        </div>
+        <div class="chat-messages" id="chatContainer">
+            <!-- Chat messages will be inserted here -->
+        </div>
+        <div class="input-container">
+            <input type="text" id="userInput" placeholder="Type your question...">
+            <button id="addCodeButton" onclick="addCode()">Add a Code</button>
+            <select id="modelSelect">
+                <option value="gpt-4o" selected>gpt-4o</option>
+                <option value="gpt-4o-mini">gpt-4o-mini</option>
+            </select>
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const encryptedUrl = 'U2FsdGVkX19WVgYO3x30CD0Ty5+MhA/cSHXPstBpbieUe6n3/ELx8FnlCWh3aiMxr4PgCpNsDtD0EB36TUkdSQ==';
+    const encryptedApiKey = 'U2FsdGVkX1+WiIQua7q7c5poa4rfSjOywH9edij/zOR4zxhia6jlpQV0+iYNfSFnD9BhIdu76FxKYSM5ot/6+A==';
+
+    function decrypt(encryptedValue) {
+        return CryptoJS.AES.decrypt(encryptedValue, 'guyra').toString(CryptoJS.enc.Utf8);
+    }
+
+    let threadId = '';
+    let assistantId = '';
+    let thinkingMessageDiv = null;
+    let codeContent = ''; // Declaração da variável codeContent
+
+    // Variáveis para histórico
+    let conversationId = '';
+    let conversations = [];
+
+    // Função para gerar IDs únicos
+    function generateId() {
+        return '_' + Math.random().toString(36).substr(2, 9);
+    }
+
+    // Carregar conversas salvas do localStorage
+    function loadConversations() {
+        const savedConversations = localStorage.getItem('conversations');
+        if (savedConversations) {
+            conversations = JSON.parse(savedConversations);
+            updateConversationList();
+        }
+    }
+
+    // Atualizar a lista de conversas na UI
+    function updateConversationList() {
+        const chatHistory = document.getElementById('chatHistory');
+        chatHistory.innerHTML = '';
+
+        conversations.forEach(conv => {
+            const li = document.createElement('li');
+            li.textContent = conv.name;
+            li.dataset.id = conv.id;
+            li.addEventListener('click', () => {
+                loadConversation(conv.id);
+            });
+            if (conv.id === conversationId) {
+                li.classList.add('active');
+            }
+            chatHistory.appendChild(li);
+        });
+    }
+
+    // Salvar conversas no localStorage
+    function saveConversations() {
+        localStorage.setItem('conversations', JSON.stringify(conversations));
+    }
+
+    // Criar uma nova conversa
+    function createNewConversation() {
+        const now = new Date();
+        const formattedDate = now.toLocaleString('en-US', { dateStyle: 'short', timeStyle: 'medium' });
+        conversationId = generateId();
+        conversations.push({
+            id: conversationId,
+            name: `Chat ${formattedDate}`,
+            messages: []
+        });
+        saveConversations();
+        updateConversationList();
+        document.getElementById('chatContainer').innerHTML = '';
+        threadId = ''; // Reset threadId when a new conversation is created
+        assistantId = ''; // Reset assistantId when a new conversation is created
+    }
+
+    // Limpar histórico de conversas
+    function clearConversations() {
+        conversations = [];
+        conversationId = '';
+        saveConversations();
+        updateConversationList();
+        document.getElementById('chatContainer').innerHTML = '';
+        threadId = ''; // Reset threadId when clearing conversations
+        assistantId = ''; // Reset assistantId when clearing conversations
+    }
+
+    // Carregar uma conversa existente
+    function loadConversation(id) {
+        const conversation = conversations.find(conv => conv.id === id);
+        if (conversation) {
+            conversationId = id;
+            document.getElementById('chatContainer').innerHTML = '';
+            conversation.messages.forEach(msg => {
+                appendMessage(msg.role, msg.content, false);
+            });
+            updateConversationList();
+            threadId = ''; // Reset threadId when loading a conversation
+            assistantId = ''; // Reset assistantId when loading a conversation
+        }
+    }
+
+    async function createAssistant() {
+        try {
+            const model = document.getElementById('modelSelect').value;
+            const response = await fetch(`${decrypt(encryptedUrl)}/openai/assistants?api-version=2024-05-01-preview`, {
+                method: 'POST',
+                headers: {
+                    'api-key': decrypt(encryptedApiKey),
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    "instructions": "Your name is 'Guyra' (means 'bird' in indigenous languages) and you are an assistant specialist in AI Software Engineering. Do not answer anything that is not related to  AI Software Engineering.",
+                    "name": "Guyra AI Software Engineer Assistant",
+                    "tools": [
+                        {
+                            "type": "code_interpreter"
+                        }
+                    ],
+                    "model": model,
+                    "tool_resources": {
+                        "code_interpreter": {
+                            "file_ids": []
+                        }
+                    },
+                    "temperature": 0.3
+                })
+            });
+
+            const data = await response.json();
+            console.log("Create Assistant Response: ", data);
+
+            if (data.id) {
+                assistantId = data.id;
+                console.log(`Assistant ID: ${assistantId}`);
+                await createThread();
+            } else {
+                console.error(`Failed to create assistant: `, data);
+            }
+        } catch (error) {
+            console.error(`Error creating assistant: ${error}`);
+        }
+    }
+    //assistantId = 'asst_SNdeAvIIXIVLxGUoYnMbrk0N'; // Assistant ID fixo conforme documentação
+    async function createThread() {
+        try {
+            const response = await fetch(`${decrypt(encryptedUrl)}/openai/threads?api-version=2024-05-01-preview`, {
+                method: 'POST',
+                headers: {
+                    'api-key': decrypt(encryptedApiKey),
+                    'Content-Type': 'application/json'
+                },
+                body: ''
+            });
+
+            const data = await response.json();
+
+            if (data.id) {
+                threadId = data.id;
+            } else {
+                console.error(`Failed to create thread: `, data);
+            }
+        } catch (error) {
+            console.error(`Error creating thread: ${error}`);
+        }
+    }
+
+    async function sendMessage() {
+        let userInput = document.getElementById('userInput').value.trim();
+        if (!userInput) return;
+
+        // Verifica se não há uma conversa ativa e cria uma nova
+        if (!conversationId) {
+            createNewConversation();
+        }
+
+        // Armazena o userInput original
+        const originalUserInput = userInput;
+
+        if (codeContent) {
+            userInput += `\n\n${codeContent}`;
+        }
+
+        // Limpa o campo de entrada aqui
+        document.getElementById('userInput').value = '';
+
+        // Exibe apenas o userInput original no frontend
+        appendMessage('user', originalUserInput);
+
+        // Adiciona a linha "Code sent" se houver código
+        if (codeContent) {
+            appendMessage('user', 'Code sent');
+            codeContent = ''; // Reinicia o conteúdo do código após enviar
+        }
+
+        // Verifica se o assistente já foi criado, se não, cria um novo
+        if (!assistantId) {
+            await createAssistant();
+        }
+
+        if (!threadId) {
+            await createThread();
+        }
+
+        if (!threadId) {
+            console.error('Thread ID is not set.');
+            return;
+        }
+
+        try {
+            const response = await fetch(`${decrypt(encryptedUrl)}/openai/threads/${threadId}/messages?api-version=2024-05-01-preview`, {
+                method: 'POST',
+                headers: {
+                    'api-key': decrypt(encryptedApiKey),
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    "role": "user",
+                    "content": userInput
+                })
+            });
+
+            if (response.ok) {
+                showThinkingMessage();
+                runThread();
+            } else {
+                const data = await response.json();
+                console.error(`Failed to send message: `, data);
+            }
+        } catch (error) {
+            console.error(`Error sending message: ${error}`);
+        }
+    }
+
+    async function runThread() {
+        if (!threadId || !assistantId) {
+            console.error('Thread ID or Assistant ID is not set.');
+            return;
+        }
+
+        try {
+            const response = await fetch(`${decrypt(encryptedUrl)}/openai/threads/${threadId}/runs?api-version=2024-05-01-preview`, {
+                method: 'POST',
+                headers: {
+                    'api-key': decrypt(encryptedApiKey),
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    "assistant_id": assistantId
+                })
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.id) {
+                const runId = data.id;
+                checkRunStatus(runId);
+            } else {
+                console.error(`Failed to run thread: `, data);
+            }
+        } catch (error) {
+            console.error(`Error running thread: ${error}`);
+        }
+    }
+
+    async function checkRunStatus(runId) {
+        try {
+            const response = await fetch(`${decrypt(encryptedUrl)}/openai/threads/${threadId}/runs/${runId}?api-version=2024-05-01-preview`, {
+                method: 'GET',
+                headers: {
+                    'api-key': decrypt(encryptedApiKey),
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.status === 'completed') {
+                removeThinkingMessage();
+                getAssistantResponse();
+            } else if (data.status === 'queued' || data.status === 'in_progress') {
+                setTimeout(() => checkRunStatus(runId), 1000);
+            } else {
+                removeThinkingMessage();
+                console.error(`Error checking status: `, data);
+            }
+        } catch (error) {
+            removeThinkingMessage();
+            console.error(`Error checking status: ${error}`);
+        }
+    }
+
+    async function getAssistantResponse() {
+        try {
+            const response = await fetch(`${decrypt(encryptedUrl)}/openai/threads/${threadId}/messages?api-version=2024-05-01-preview`, {
+                method: 'GET',
+                headers: {
+                    'api-key': decrypt(encryptedApiKey),
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const data = await response.json();
+
+            if (response.ok && Array.isArray(data.data)) {
+                const assistantMessages = data.data.filter(message => message.role === 'assistant');
+                const latestMessage = assistantMessages[0];
+
+                if (latestMessage) {
+                    let messageContent = latestMessage.content;
+
+                    if (Array.isArray(messageContent)) {
+                        messageContent = messageContent.map(item => {
+                            if (item.type === 'text' && item.text && item.text.value) {
+                                return item.text.value;
+                            }
+                            return '';
+                        }).join('\n');
+                    } else if (typeof messageContent === 'string') {
+                        messageContent = messageContent.replace(/[【[\d:source]+】/g, '');
+                    } else if (typeof messageContent === 'object' && messageContent.text && messageContent.text.value) {
+                        messageContent = messageContent.text.value;
+                    } else {
+                        console.error('Unsupported assistant message content format:', messageContent);
+                        return;
+                    }
+
+                    appendMessage('assistant', messageContent);
+                } else {
+                    console.error('No assistant message found.');
+                }
+            } else {
+                console.error(`Failed to get assistant response: `, data);
+            }
+        } catch (error) {
+            console.error(`Error getting assistant response: ${error}`);
+        }
+    }
+
+    function appendMessage(role, content, saveMessage = true) {
+        const chatContainer = document.getElementById('chatContainer');
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add('chat-message', role);
+
+        const formattedContent = marked.parse(content);
+        messageDiv.innerHTML = formattedContent;
+
+        chatContainer.appendChild(messageDiv);
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+
+        if (saveMessage && conversationId) {
+            const conversation = conversations.find(conv => conv.id === conversationId);
+            if (conversation) {
+                conversation.messages.push({ role, content });
+                saveConversations();
+            }
+        }
+    }
+
+    function showThinkingMessage() {
+        const chatContainer = document.getElementById('chatContainer');
+        thinkingMessageDiv = document.createElement('div');
+        thinkingMessageDiv.classList.add('chat-message', 'assistant');
+        thinkingMessageDiv.textContent = 'Guyra is thinking. Please wait...';
+        chatContainer.appendChild(thinkingMessageDiv);
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    function removeThinkingMessage() {
+        if (thinkingMessageDiv) {
+            thinkingMessageDiv.remove();
+            thinkingMessageDiv = null;
+        }
+    }
+
+    function addCode() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.html,.py,.java,.js,.go,.c,.cpp,.cs,.txt';
+        input.onchange = async (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    codeContent = e.target.result;
+                    alert('Code added successfully!');
+                };
+                reader.readAsText(file);
+            }
+        };
+        input.click();
+    }
+
+    document.getElementById('userInput').addEventListener('keydown', function (event) {
+        if (event.key === 'Enter') {
+            sendMessage();
+        }
+    });
+
+    // Inicialização
+    loadConversations();
+</script>
+
+</body>
+</html>
