@@ -345,7 +345,7 @@
             if (data.id) {
                 threadId = data.id;
                 // Criar nova conversa ao criar um novo thread
-                createNewConversation();
+                //createNewConversation();
             } else {
                 console.error(`Failed to create thread: `, data);
             }
@@ -359,27 +359,32 @@
             console.error('Thread ID is not set.');
             return;
         }
-
+    
         let userInput = document.getElementById('userInput').value.trim();
         if (!userInput) return;
-
+    
+        // Verifica se não há uma conversa ativa e cria uma nova
+        if (!conversationId) {
+            createNewConversation();
+        }
+    
         // Armazena o userInput original
         const originalUserInput = userInput;
-
+    
         if (codeContent) {
             userInput += `\n\n${codeContent}`;
         }
-
+    
         // Limpa o campo de entrada aqui
         document.getElementById('userInput').value = '';
-
+    
         // Exibe apenas o userInput original no frontend
         appendMessage('user', originalUserInput);
-
+    
         // Adiciona a linha "Code sent" se houver código
         if (codeContent) {
             appendMessage('user', 'Code sent');
-            codeContent = ''; // Reset code content after sending
+            codeContent = ''; // Reinicia o conteúdo do código após enviar
         }
 
         try {
